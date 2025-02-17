@@ -1,56 +1,54 @@
 import React, { useState } from "react";
-import { Tree, TreeNode } from "react-organizational-chart";
+import { TreeNode } from "react-organizational-chart";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Button from "react-bootstrap/Button";
-import Modal from "react-bootstrap/Modal";
-import Form from "react-bootstrap/Form";
-import ToggleButton from "react-bootstrap/ToggleButton";
-import ToggleButtonGroup from "react-bootstrap/ToggleButtonGroup";
-import "./styles.css";
-import CommunicationPage from "./CommunicationPage";
+
 import CommunicationReactFlow from "./CommunicationReactFlow";
 import InfrastructureReactFlow from "./InfraStructureReactFlow";
+import { useNodesState, useEdgesState } from "reactflow";
 
-import ReactFlow, { addEdge, useNodesState, useEdgesState } from "reactflow";
-
+// Default nodes with descriptions
 const initNodes = [
   {
-    id: "1a",
+    id: "1",
     type: "customNode",
     data: {
       label: "Information System",
+      level: 0,
       description:
         "An information system is an organized combination of people, hardware, software, communication networks, and data resources that collects, transforms, and disseminates information in an organization.",
     },
-    position: { x: 250, y: 5 },
+    position: { x: 0, y: 0 },
   },
   {
-    id: "2a",
+    id: "2",
     type: "customNode",
     data: {
       label: "Stakeholder",
+      level: 1,
       description:
         "A stakeholder refers to any individual, group, or organization that has an interest or concern in the system, its development, implementation, or outcomes. These stakeholders can be internal or external to the organization implementing the information system. Understanding and managing stakeholders is crucial for the success of an information system project.",
     },
-    position: { x: 100, y: 120 },
+    position: { x: 100, y: 100 },
   },
   {
-    id: "3a",
+    id: "3",
     type: "customNode",
     data: {
       label: "Infrastructure",
+      level: 1,
       description:
         "Infrastructure in the context of information systems refers to the fundamental physical and organizational structures, facilities, and services required for the operation of an information system. This includes hardware, software, networking components, data centers, and the personnel that maintain and manage the system. Effective infrastructure supports the smooth and efficient collection, storage, processing, and dissemination of information.",
     },
-    position: { x: 400, y: 120 },
+    position: { x: -100, y: 100 },
   },
 ];
 
 const initEdges = [
-  { id: "e1-2", source: "1a", target: "2a" },
-  { id: "e1-3", source: "1a", target: "3a" },
+  { id: "e1-2", source: "1", target: "2" },
+  { id: "e1-3", source: "1", target: "3" },
 ];
 
 const Holon = ({
@@ -116,12 +114,16 @@ const App = () => {
   const [activeStep, setActiveStep] = useState(1);
   const [nodes, setNodes, onNodesChange] = useNodesState(initNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initEdges);
+  const [setSelectedNode] = useState(null); // State to track the selected node
+
   return (
-    <div className="container-fluid">
+    <div className="container-fluid" style={{ overflowX: "hidden" }}>
+      {/* Header Section with Styling */}
       <div className="d-flex justify-content-start align-items-center p-3 bg-light shadow-sm">
         <div
           className={`step me-3 ${activeStep === 1 ? "active" : ""}`}
           onClick={() => setActiveStep(1)}
+          style={{ cursor: "pointer", display: "flex", alignItems: "center" }}
         >
           <div
             className={`step-circle text-white rounded-circle d-flex justify-content-center align-items-center ${
@@ -132,7 +134,10 @@ const App = () => {
             1
           </div>
           <div
-            className={`ms-2 fw-bold ${activeStep === 1 ? "text-primary" : ""}`}
+            className={`ms-2 fw-bold ${
+              activeStep === 1 ? "text-primary" : "text-secondary"
+            }`}
+            style={{ fontSize: "22px" }} // Increased font size
           >
             Structure
           </div>
@@ -140,6 +145,7 @@ const App = () => {
         <div
           className={`step ${activeStep === 2 ? "active" : ""}`}
           onClick={() => setActiveStep(2)}
+          style={{ cursor: "pointer", display: "flex", alignItems: "center" }}
         >
           <div
             className={`step-circle text-white rounded-circle d-flex justify-content-center align-items-center ${
@@ -150,36 +156,39 @@ const App = () => {
             2
           </div>
           <div
-            className={`ms-2 fw-bold ${activeStep === 2 ? "text-primary" : ""}`}
+            className={`ms-2 fw-bold ${
+              activeStep === 2 ? "text-primary" : "text-secondary"
+            }`}
+            style={{ fontSize: "22px" }} // Increased font size
           >
             Communication
           </div>
         </div>
       </div>
+
+      {/* Main Content Section */}
       <div className="row p-3">
-        <div className="col-md-8">
+        <div className="col-md-8" style={{ height: "80vh" }}>
           {activeStep === 1 ? (
             <InfrastructureReactFlow
-              initNodes={initNodes}
-              initEdges={initEdges}
               nodes={nodes}
-              setNodes={setNodes}
-              onNodesChange={onNodesChange}
               edges={edges}
-              setEdges={setEdges}
+              onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
+              setNodes={setNodes}
+              setEdges={setEdges}
+              setSelectedNode={setSelectedNode} // Pass setSelectedNode to handle node selection
             />
           ) : (
             <CommunicationReactFlow
-              initNodes={initNodes}
-              initEdges={initEdges}
               nodes={nodes}
-              setNodes={setNodes}
-              onNodesChange={onNodesChange}
               edges={edges}
-              setEdges={setEdges}
+              onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
-            /> // Properly integrate the CommunicationPage component
+              setNodes={setNodes}
+              setEdges={setEdges}
+              setSelectedNode={setSelectedNode} // Pass setSelectedNode to handle node selection
+            />
           )}
         </div>
       </div>

@@ -93,9 +93,9 @@ function InfrastructureReactFlow(props) {
   return (
     <div
       className="container-fluid"
-      style={{ display: "flex", height: "100vh" }}
+      style={{ display: "flex", height: "100vh",width:'100vw' }}
     >
-      <div className="col-10" style={{ height: "100%" }}>
+      <div className="col-9" style={{ height: "100%" }}>
         <ReactFlow
           nodeTypes={nodeTypes}
           nodes={props.nodes.map((node) => ({
@@ -118,11 +118,11 @@ function InfrastructureReactFlow(props) {
         />
       </div>
       <div
-        className="col-4"
+        className="col-3"
         style={{ padding: "10px", borderLeft: "1px solid #ccc" }}
       >
         {selectedNode ? (
-          <>
+          <div className="mr-3">
             <h3>Holon Details</h3>
             <div className="form-group">
               <label htmlFor="nodeName1">Name</label>
@@ -136,9 +136,9 @@ function InfrastructureReactFlow(props) {
                     nds.map((node) =>
                       node.id === selectedNode.id
                         ? {
-                            ...node,
-                            data: { ...node.data, label: e.target.value },
-                          }
+                          ...node,
+                          data: { ...node.data, label: e.target.value },
+                        }
                         : node
                     )
                   )
@@ -149,12 +149,13 @@ function InfrastructureReactFlow(props) {
               <label htmlFor="nodeDescription">Description</label>
               <textarea
                 id="nodeDescription"
+                style={{ height: "200px", width: "100%" }}
                 className="form-control"
                 placeholder="An example description..."
                 value={selectedNode.data.description}
               />
             </div>
-          </>
+          </div>
         ) : (
           <div>No Selection</div>
         )}
