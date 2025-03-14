@@ -23,7 +23,7 @@ Installation To run this application locally, follow these steps:
 
 Clone the repository:
 
-git clone https://github.com/your-username/communication-infrastructure-reactflow.git cd communication-infrastructure-reactflow
+git clone 
 
 Install dependencies: npm install
 
