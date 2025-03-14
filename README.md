@@ -1,70 +1,65 @@
-# Getting Started with Create React App
+This repository contains a React application that leverages the reactflow library to create interactive flow diagrams for both communication and infrastructure structures. The application allows users to create, modify, and visualize nodes and edges, representing different entities and their relationships.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Features
 
-## Available Scripts
+Communication Flow Interactive Nodes: Users can click on nodes to view and edit their details, including labels and descriptions.
+Information Flows: Users can define and visualize information flows between nodes. The application supports adding, deleting, and exporting/importing information flows.
 
-In the project directory, you can run:
+Path Visualization: The application highlights the path between selected nodes, making it easy to understand the flow of information.
 
-### `npm start`
+Export/Import: Users can export the current information flows as a JSON file and import previously saved flows.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Infrastructure Flow Hierarchical Structure: Users can create hierarchical structures by adding parent and child nodes.
+Node Management: Nodes can be added, deleted, and edited. The application supports adding both child and parent nodes to existing nodes.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Edge Management: Users can delete edges between nodes to modify the structure.
 
-### `npm test`
+User Interface Step-by-Step Navigation: The application provides a step-by-step interface to switch between the "Structure" and "Communication" views.
+Modal Dialogs: Modal dialogs are used for adding new nodes and displaying alerts.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Bootstrap Styling: The application uses Bootstrap for a clean and responsive user interface.
 
-### `npm run build`
+Installation To run this application locally, follow these steps:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Clone the repository:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+git clone https://github.com/your-username/communication-infrastructure-reactflow.git cd communication-infrastructure-reactflow
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Install dependencies: npm install
 
-### `npm run eject`
+Run the application: npm start
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Open the application: Open your browser and navigate to http://localhost:3000.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Usage Communication Flow Add Information Flow: Click on the "Add Information Flow" button to start defining information flows between nodes. Select a source node and then a destination node to create a flow.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+Export/Import: Use the "Export Information Flows" button to export the current flows as a JSON file. Use the "Import Information Flows" button to import flows from a JSON file.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Show Flows: Use the "Show All Flow" and "Selected Holon" buttons to visualize the information flows on the graph.
 
-## Learn More
+Infrastructure Flow Add Node: Click on the "Add Node" button to open a modal where you can add a new node. You can choose to add a child node or a parent node.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Edit Node: Click on any node to view and edit its details, including the label and description.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Delete Node/Edge: Use the delete buttons to remove nodes or edges from the graph.
 
-### Code Splitting
+Code Structure CommunicationReactFlow.js: Contains the logic for the communication flow, including node and edge management, information flow handling, and export/import functionality.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+InfrastructureReactFlow.js: Contains the logic for the infrastructure flow, including hierarchical node management and edge handling.
 
-### Analyzing the Bundle Size
+App.js: The main application component that handles the navigation between the "Structure" and "Communication" views.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+CustomNode.js: A custom node component used in the flow diagrams.
 
-### Making a Progressive Web App
+styles.css: Custom styles for the application.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+Dependencies React: A JavaScript library for building user interfaces.
 
-### Advanced Configuration
+ReactFlow: A library for building interactive flow diagrams.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+Bootstrap: A CSS framework for responsive design.
 
-### Deployment
+React Modal: A library for creating modal dialogs.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+FontAwesome: A library for icons.
 
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
