@@ -1,4 +1,4 @@
-import React, { useCallback,  useState } from "react";
+import React, { useCallback, useState } from "react";
 import ReactFlow, {
   addEdge,
   useNodesState,
@@ -31,9 +31,8 @@ function CommunicationReactFlow(props) {
   const [newNodeLabel, setNewNodeLabel] = useState("");
   const [disableAdd] = useState(false);
   const [resetFlow, setResetFlow] = useState(false);
-  const [isAlertModalOpen, setIsAlertModalOpen] = useState(false); // State for alert modal visibility
-  const [alertMessage, setAlertMessage] = useState(""); // State for alert message
-
+  const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
   const [informationFlows, setInformationFlows] = useState([]);
   const [selectedInformationFlows, setSelectedInformationFlows] = useState([]);
   const [selectedFlowShow, setSelectedFlowShow] = useState(false);
@@ -43,8 +42,7 @@ function CommunicationReactFlow(props) {
     [setEdges]
   );
 
-  // Export the information flows as a JSON file
-  const exportInformationFlows = () => {
+  const exportInformationFlows = useCallback(() => {
     const dataStr =
       "data:text/json;charset=utf-8," +
       encodeURIComponent(JSON.stringify(informationFlows));
@@ -54,19 +52,14 @@ function CommunicationReactFlow(props) {
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
-  };
+  }, [informationFlows]);
 
-  // Import the information flows from a JSON file
-  const importInformationFlows = (event) => {
+  const importInformationFlows = useCallback((event) => {
     const fileReader = new FileReader();
     fileReader.onload = (e) => {
       try {
         const importedFlows = JSON.parse(e.target.result);
-
         if (Array.isArray(importedFlows)) {
-          console.log(importedFlows);
-          console.log(informationFlows);
-          // Convert the imported flows into nodes and update the state
           setInformationFlows(
             importedFlows.map(([sourceNode, destinationNode]) => {
               return [
@@ -84,24 +77,18 @@ function CommunicationReactFlow(props) {
         alert("Failed to load the JSON file. Please check the file format.");
       }
     };
-
     if (event.target.files.length > 0) {
       fileReader.readAsText(event.target.files[0]);
     }
-  };
+  }, [nodes]);
 
-  const findPath = (sourceId, targetId) => {
+  const findPath = useCallback((sourceId, targetId) => {
     const visited = new Set();
     const queue = [[sourceId]];
-
     while (queue.length > 0) {
       const path = queue.shift();
       const node = path[path.length - 1];
-
-      if (node === targetId) {
-        return path;
-      }
-
+      if (node === targetId) return path;
       if (!visited.has(node)) {
         visited.add(node);
         edges
@@ -113,30 +100,149 @@ function CommunicationReactFlow(props) {
       }
     }
     return [];
-  };
+  }, [edges]);
 
-  const handleNodeClick = (event, nodeData) => {
-    const clickedNode = nodes.find((n) => n.id === nodeData.id) || nodeData;
-    setSelectedNode(clickedNode);
-    const selectedInformationFlow = informationFlows
-      ?.find((flow) => flow.find((flowItem) => flowItem?.id === nodeData.id))
-      ?.find((infoFlow) => infoFlow?.id === nodeData.id);
-    setSelectedInformationFlow(selectedInformationFlow);
-
+  const resetSelection = useCallback(() => {
     if (enableInformationFlow) {
+      setSourceNode(null);
+      setDestinationNode(null);
+      setNodes((nds) =>
+        nds.map((n) => ({
+          ...n,
+          style: { ...n.style, border: undefined },
+        }))
+      );
+      setEdges((eds) =>
+        eds.map((edge) => ({
+          ...edge,
+          animated: false,
+          style: { stroke: "black" },
+        }))
+      );
+    }
+    setEnableInformationFlow((prev) => !prev);
+    setResetFlow(true);
+  }, [enableInformationFlow, setNodes, setEdges]);
+
+  const showOneFlowOnGraph = useCallback(
+    (sourceNode, destinationNode) => {
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === sourceNode.id
+            ? { ...n, style: { border: "2px solid blue" } }
+            : n.id === destinationNode.id
+            ? { ...n, style: { border: "2px solid green" } }
+            : n
+        )
+      );
+
+      const path = findPath(sourceNode.id, destinationNode.id);
+      if (!path || path.length === 0) {
+        console.error("No path found between the selected nodes.");
+        return;
+      }
+
+      setEdges((eds) =>
+        eds.map((edge) => {
+          const isInPath =
+            path.includes(edge.source) && path.includes(edge.target);
+          const isForwardDirection =
+            edge.source === path[0] && edge.target === path[1];
+          return {
+            ...edge,
+            animated: isInPath ? true : edge.animated,
+            style: {
+              ...edge.style,
+              stroke: isInPath ? "green" : edge.style?.stroke,
+              strokeDasharray: isInPath ? "5,5" : edge.style?.strokeDasharray,
+            },
+            markerEnd: isInPath
+              ? {
+                  type: MarkerType.ArrowClosed,
+                  color: "green",
+                  orient: isForwardDirection ? "auto" : "auto-start-reverse",
+                }
+              : edge.markerEnd,
+          };
+        })
+      );
+    },
+    [findPath, setNodes, setEdges]
+  );
+
+  const showInformationFlowOnTheGraphs = useCallback(() => {
+    informationFlows.forEach((flow) => {
+      const [sourceNode, destinationNode] = flow;
+      showOneFlowOnGraph(sourceNode, destinationNode);
+    });
+    setSelectedFlowShow(false);
+  }, [informationFlows, showOneFlowOnGraph]);
+
+  const resetGraphs = useCallback(() => {
+    setNodes((nds) => nds.map((n) => ({ ...n, style: { border: "none" } })));
+    setEdges((eds) =>
+      eds.map((edge) => ({
+        ...edge,
+        animated: false,
+        style: { stroke: "black" },
+      }))
+    );
+    setSelectedFlowShow(false);
+  }, [setNodes, setEdges]);
+
+  const showSelectedHolonFlowOnTheGraphs = useCallback(() => {
+    resetGraphs();
+    let selectedLabel = selectedNode?.data?.label;
+    informationFlows.forEach((flow) => {
+      let flowLabel0 = flow[0].data?.label;
+      let flowLabel1 = flow[1].data?.label;
+      if (flowLabel0 === selectedLabel || flowLabel1 === selectedLabel) {
+        const [sourceNode, destinationNode] = flow;
+        showOneFlowOnGraph(sourceNode, destinationNode);
+      }
+    });
+    let newInformationFlows = informationFlows.filter((flow) => {
+      let flowLabel0 = flow[0].data?.label;
+      let flowLabel1 = flow[1].data?.label;
+      return flowLabel0 === selectedLabel || flowLabel1 === selectedLabel;
+    });
+    setSelectedInformationFlows(newInformationFlows);
+    setSelectedFlowShow(true);
+  }, [selectedNode, informationFlows, resetGraphs, showOneFlowOnGraph]);
+
+  const handleNodeClick = useCallback(
+    (event, nodeData) => {
+      const clickedNode = nodes.find((n) => n.id === nodeData.id) || nodeData;
+      setSelectedNode(clickedNode);
+      const selectedInformationFlow = informationFlows
+        ?.find((flow) => flow.find((flowItem) => flowItem?.id === nodeData.id))
+        ?.find((infoFlow) => infoFlow?.id === nodeData.id);
+      setSelectedInformationFlow(selectedInformationFlow);
+
+      if (!enableInformationFlow) return;
+
       setResetFlow(false);
+
       if (!sourceNode) {
         setSourceNode(clickedNode);
         setNodes((nds) =>
-          nds.map((n) =>
-            n.id === clickedNode.id ? { ...n, style: { border: "2px solid blue" } } : n
-          )
+          nds.map((n) => ({
+            ...n,
+            style: {
+              ...n.style,
+              border: n.id === clickedNode.id ? "2px solid blue" : undefined,
+            },
+          }))
         );
-      } else if (sourceNode.id !== clickedNode.id) {
+      } else if (sourceNode.id !== clickedNode.id && !destinationNode) {
         const levelTolerance = 15;
-        if (Math.abs(sourceNode.position.y - clickedNode.position.y) > levelTolerance) {
-          // Show Bootstrap-styled alert modal
-          setAlertMessage("Source and destination nodes must be on the same level.");
+        if (
+          Math.abs(sourceNode.position.y - clickedNode.position.y) >
+          levelTolerance
+        ) {
+          setAlertMessage(
+            "Source and destination nodes must be on the same level."
+          );
           setIsAlertModalOpen(true);
           return;
         }
@@ -183,148 +289,62 @@ function CommunicationReactFlow(props) {
           setInformationFlows(informationFl);
         }
         setNodes((nds) =>
-          nds.map((n) =>
-            n.id === clickedNode.id
-              ? { ...n, style: { border: "2px solid green" } }
-              : n
-          )
+          nds.map((n) => ({
+            ...n,
+            style: {
+              ...n.style,
+              border:
+                n.id === clickedNode.id
+                  ? "2px solid green"
+                  : n.id === sourceNode.id
+                  ? "2px solid blue"
+                  : undefined,
+            },
+          }))
         );
-        setTimeout(resetSelection, 1000);
+        setTimeout(() => resetSelection(), 1000);
       }
-    }
-  };
-
-  const showInformationFlowOnTheGraphs = () => {
-    informationFlows.forEach((flow) => {
-      const [sourceNode, destinationNode] = flow;
-      showOneFlowOnGraph(sourceNode, destinationNode);
-    });
-
-    setSelectedFlowShow(false);
-  };
-
-  const showSelectedHolonFlowOnTheGraphs = () => {
-    resetGraphs();
-    let selectedLabel = selectedNode?.data?.label;
-    informationFlows.forEach((flow) => {
-      let flowLabel0 = flow[0].data?.label;
-      let flowLabel1 = flow[1].data?.label;
-      if (flowLabel0 === selectedLabel || flowLabel1 === selectedLabel) {
-        const [sourceNode, destinationNode] = flow;
-        showOneFlowOnGraph(sourceNode, destinationNode);
-      }
-    });
-    let newInformationFlows = [];
-    informationFlows.forEach((flow) => {
-      let flowLabel0 = flow[0].data?.label;
-      let flowLabel1 = flow[1].data?.label;
-      if (flowLabel0 === selectedLabel || flowLabel1 === selectedLabel) {
-        newInformationFlows.push(flow);
-      }
-    });
-    setSelectedInformationFlows(newInformationFlows);
-    setSelectedFlowShow(true);
-  };
-
-  const showOneFlowOnGraph = (sourceNode, destinationNode) => {
-    setNodes((nds) =>
-      nds.map((n) =>
-        n.id === sourceNode.id
-          ? { ...n, style: { border: "2px solid blue" } }
-          : n.id === destinationNode.id
-          ? { ...n, style: { border: "2px solid green" } }
-          : n
-      )
-    );
-
-    const path = findPath(sourceNode.id, destinationNode.id);
-
-    if (!path || path.length === 0) {
-      console.error("No path found between the selected nodes.");
-      return;
-    }
-
-    setEdges((eds) =>
-      eds.map((edge) => {
-        const isInPath =
-          path.includes(edge.source) && path.includes(edge.target);
-
-        const isForwardDirection =
-          edge.source === path[0] && edge.target === path[1];
-        
-
-        return {
-          ...edge,
-          animated: isInPath ? true : edge.animated,
-          style: {
-            ...edge.style,
-            stroke: isInPath ? "green" : edge.style?.stroke,
-            strokeDasharray: isInPath ? "5,5" : edge.style?.strokeDasharray,
-          },
-          markerEnd: isInPath
-            ? {
-                type: MarkerType.ArrowClosed,
-                color: "green",
-                orient: isForwardDirection ? "auto" : "auto-start-reverse",
-              }
-            : edge.markerEnd,
-        };
-      })
-    );
-  };
-
-  const resetSelection = () => {
-    setEnableInformationFlow(!enableInformationFlow);
-    if (enableInformationFlow) {
-      setResetFlow(true);
-      setSourceNode(null);
-      setDestinationNode(null);
-      setNodes((nds) => nds.map((n) => ({ ...n, style: { border: "none" } })));
-      setEdges((eds) =>
-        eds.map((edge) => ({
-          ...edge,
-          animated: false,
-          style: { stroke: "black" },
-        }))
-      );
-    }
-  };
-
-  const resetGraphs = () => {
-    setNodes((nds) => nds.map((n) => ({ ...n, style: { border: "none" } })));
-    setEdges((eds) =>
-      eds.map((edge) => ({
-        ...edge,
-        animated: false,
-        style: { stroke: "black" },
-      }))
-    );
-
-    setSelectedFlowShow(false);
-  };
+    },
+    [
+      enableInformationFlow,
+      nodes,
+      sourceNode,
+      destinationNode,
+      informationFlows,
+      findPath,
+      resetSelection,
+      setNodes,
+      setEdges,
+    ]
+  );
 
   return (
     <div
       className="container-fluid"
       style={{ display: "flex", height: "100vh", width: "98vw" }}
     >
-      <div className="col-8" style={{ height: "100%" }}>
+      <div className="col-8" style={{ height: "100%", paddingTop: "60px" }}>
         <div
-          className="d-flex justify-content-between align-items-center mb-3"
-          style={{ position: "absolute", top: -88, right: "-23vw" }}
+          style={{
+            position: "fixed",
+            top: "10px",
+            right: "10px",
+            zIndex: 1000,
+            display: "flex",
+            gap: "10px",
+          }}
         >
-          <button className={"btn btn-success"} onClick={resetSelection}>
+          <button className="btn btn-success" onClick={resetSelection}>
             Add Information Flow
           </button>
           {informationFlows.length > 0 && (
             <button
-              className={"btn btn-primary ml-2"}
+              className="btn btn-primary"
               onClick={exportInformationFlows}
             >
               Export Information Flows
             </button>
           )}
-
           <input
             type="file"
             accept=".json"
@@ -332,7 +352,7 @@ function CommunicationReactFlow(props) {
             style={{ display: "none" }}
             id="uploadFile"
           />
-          <label htmlFor="uploadFile" className="btn btn-secondary ml-2 mt-2">
+          <label htmlFor="uploadFile" className="btn btn-secondary">
             Import Information Flows
           </label>
         </div>
@@ -341,10 +361,7 @@ function CommunicationReactFlow(props) {
           nodeTypes={nodeTypes}
           nodes={nodes.map((node) => ({
             ...node,
-            data: {
-              ...node.data,
-              disable: disableAdd,
-            },
+            data: { ...node.data, disable: disableAdd },
           }))}
           edges={edges}
           onNodesChange={onNodesChange}
@@ -357,25 +374,35 @@ function CommunicationReactFlow(props) {
           onPaneClick={() => setSelectedNode(null)}
         />
       </div>
-      {sourceNode && destinationNode == null ? (
-        <div style={{ position: "fixed", top: "90%", left: "20%", fontSize: "20px" }}>
+      {sourceNode && destinationNode == null && (
+        <div
+          style={{
+            position: "fixed",
+            top: "90%",
+            left: "20%",
+            fontSize: "20px",
+          }}
+        >
           <div className="mt-3 alert alert-success">
             Select the Destination Node
           </div>
         </div>
-      ) : (
-        ""
       )}
-      {resetFlow && enableInformationFlow ? (
-        <div style={{ position: "fixed", top: "90%", left: "20%", fontSize: "20px" }}>
+      {resetFlow && enableInformationFlow && (
+        <div
+          style={{
+            position: "fixed",
+            top: "90%",
+            left: "20%",
+            fontSize: "20px",
+          }}
+        >
           <div className="mt-3 alert alert-success">Select the Source Node</div>
         </div>
-      ) : (
-        ""
       )}
       <div
         className="col-4"
-        style={{ padding: "10px", borderLeft: "1px solid #ccc" }}
+        style={{ padding: "10px", paddingTop: "60px", overflowY: "auto" }}
       >
         {selectedNode ? (
           <div className="mr-3">
@@ -467,20 +494,20 @@ function CommunicationReactFlow(props) {
               </div>
               <div>
                 <button
-                  className={"btn btn-success mx-1"}
-                  onClick={() => showInformationFlowOnTheGraphs()}
+                  className="btn btn-success mx-1"
+                  onClick={showInformationFlowOnTheGraphs}
                 >
                   Show All Flow
                 </button>
                 <button
-                  className={"btn btn-success mx-1"}
-                  onClick={() => showSelectedHolonFlowOnTheGraphs()}
+                  className="btn btn-success mx-1"
+                  onClick={showSelectedHolonFlowOnTheGraphs}
                 >
                   Selected Holon
                 </button>
                 {informationFlows.length > 0 && (
                   <button
-                    className={"btn btn-primary mx-2"}
+                    className="btn btn-primary mx-2"
                     onClick={resetGraphs}
                   >
                     Reset Flow
@@ -488,105 +515,91 @@ function CommunicationReactFlow(props) {
                 )}
               </div>
               {!selectedFlowShow &&
-                informationFlows.map((nodePair) => {
-                  return (
-                    <div
-                      className="mt-3 alert alert-success"
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                      key={`${nodePair[0].id}-${nodePair[1].id}`}
-                    >
-                      <div>
-                        <strong>
-                          {nodePair[0].data.label} {"-->"}{" "}
-                          {nodePair[1].data.label}
-                        </strong>
-                      </div>
-                      <div style={{ display: "flex", gap: 20 }}>
-                        <button
-                          className={"btn btn-success"}
-                          onClick={() =>
-                            showOneFlowOnGraph(nodePair[0], nodePair[1])
-                          }
-                        >
-                          Show Flow
-                        </button>
-                        <button
-                          className={"btn btn-danger"}
-                          onClick={() => {
-                            const nodeId1 = nodePair[0].id;
-                            const nodeId2 = nodePair[1].id;
-                            setInformationFlows((flows) =>
-                              flows.filter(
-                                (pair) =>
-                                  !(
-                                    pair[0].id === nodeId1 &&
-                                    pair[1].id === nodeId2
-                                  )
-                              )
-                            );
-                            resetGraphs();
-                          }}
-                        >
-                          Delete Information Flow
-                        </button>
-                      </div>
+                informationFlows.map((nodePair) => (
+                  <div
+                    className="mt-3 alert alert-success"
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                    key={`${nodePair[0].id}-${nodePair[1].id}`}
+                  >
+                    <div>
+                      <strong>
+                        {nodePair[0].data.label} {"-->"}{" "}
+                        {nodePair[1].data.label}
+                      </strong>
                     </div>
-                  );
-                })}
+                    <div style={{ display: "flex", gap: 20 }}>
+                      <button
+                        className="btn btn-success"
+                        onClick={() => showOneFlowOnGraph(nodePair[0], nodePair[1])}
+                      >
+                        Show Flow
+                      </button>
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => {
+                          const nodeId1 = nodePair[0].id;
+                          const nodeId2 = nodePair[1].id;
+                          setInformationFlows((flows) =>
+                            flows.filter(
+                              (pair) =>
+                                !(pair[0].id === nodeId1 && pair[1].id === nodeId2)
+                            )
+                          );
+                          resetGraphs();
+                        }}
+                      >
+                        Delete Information Flow
+                      </button>
+                    </div>
+                  </div>
+                ))}
               {selectedFlowShow &&
-                selectedInformationFlows.map((nodePair) => {
-                  return (
-                    <div
-                      className="mt-3 alert alert-success"
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                      key={`${nodePair[0].id}-${nodePair[1].id}`}
-                    >
-                      <div>
-                        <strong>
-                          {nodePair[0].data.label} {"-->"}{" "}
-                          {nodePair[1].data.label}
-                        </strong> 
-                      </div> 
-                      <div style={{ display: "flex", gap: 20 }}>
-                        <button
-                          className={"btn btn-success"}
-                          onClick={() =>
-                            showOneFlowOnGraph(nodePair[0], nodePair[1])
-                          }
-                        >
-                          Show Flow
-                        </button>
-                        <button
-                          className={"btn btn-danger"}
-                          onClick={() => {
-                            const nodeId1 = nodePair[0].id;
-                            const nodeId2 = nodePair[1].id;
-                            setInformationFlows((flows) =>
-                              flows.filter(
-                                (pair) =>
-                                  !(
-                                    pair[0].id === nodeId1 &&
-                                    pair[1].id === nodeId2
-                                  )
-                              )
-                            );
-                            resetGraphs();
-                          }}
-                        >
-                          Delete Information Flow
-                        </button>
-                      </div>
+                selectedInformationFlows.map((nodePair) => (
+                  <div
+                    className="mt-3 alert alert-success"
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                    key={`${nodePair[0].id}-${nodePair[1].id}`}
+                  >
+                    <div>
+                      <strong>
+                        {nodePair[0].data.label} {"-->"}{" "}
+                        {nodePair[1].data.label}
+                      </strong>
                     </div>
-                  );
-                })}
+                    <div style={{ display: "flex", gap: 20 }}>
+                      <button
+                        className="btn btn-success"
+                        onClick={() => showOneFlowOnGraph(nodePair[0], nodePair[1])}
+                      >
+                        Show Flow
+                      </button>
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => {
+                          const nodeId1 = nodePair[0].id;
+                          const nodeId2 = nodePair[1].id;
+                          setInformationFlows((flows) =>
+                            flows.filter(
+                              (pair) =>
+                                !(pair[0].id === nodeId1 && pair[1].id === nodeId2)
+                            )
+                          );
+                          resetGraphs();
+                        }}
+                      >
+                        Delete Information Flow
+                      </button>
+                    </div>
+                  </div>
+                ))}
             </div>
           </div>
         ) : (
@@ -601,7 +614,7 @@ function CommunicationReactFlow(props) {
             className="close"
             onClick={() => setIsModalOpen(false)}
           >
-            <span>&times;</span>
+            <span>×</span>
           </button>
         </div>
         <div className="modal-body">
@@ -646,15 +659,11 @@ function CommunicationReactFlow(props) {
           </button>
         </div>
       </Modal>
-
-      {/* Bootstrap-styled Alert Modal */}
       <Modal
         isOpen={isAlertModalOpen}
         onRequestClose={() => setIsAlertModalOpen(false)}
         style={{
-          overlay: {
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-          },
+          overlay: { backgroundColor: "rgba(0, 0, 0, 0.5)" },
           content: {
             top: "50%",
             left: "50%",
@@ -677,7 +686,7 @@ function CommunicationReactFlow(props) {
             className="close"
             onClick={() => setIsAlertModalOpen(false)}
           >
-            <span>&times;</span>
+            <span>×</span>
           </button>
         </div>
         <div className="modal-body">

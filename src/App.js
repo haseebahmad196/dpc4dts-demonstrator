@@ -119,7 +119,7 @@ const App = () => {
   return (
     <div className="container-fluid" style={{ overflowX: "hidden" }}>
       {/* Header Section with Styling */}
-      <div className="d-flex justify-content-start align-items-center p-3 bg-light shadow-sm">
+      <div className="d-flex sticky-topjustify-content-start align-items-center p-3 bg-light shadow-sm">
         <div
           className={`step me-3 ${activeStep === 1 ? "active" : ""}`}
           onClick={() => setActiveStep(1)}
@@ -127,9 +127,9 @@ const App = () => {
         >
           <div
             className={`step-circle text-white rounded-circle d-flex justify-content-center align-items-center ${
-              activeStep === 1 ? "bg-primary" : "bg-secondary"
+              activeStep === 1 ? "bg-primary" : "bg-secondary" 
             }`}
-            style={{ width: "30px", height: "30px" }}
+            style={{ width: "30px", height: "30px", fontSize: "22px"  }}
           >
             1
           </div>
@@ -151,7 +151,7 @@ const App = () => {
             className={`step-circle text-white rounded-circle d-flex justify-content-center align-items-center ${
               activeStep === 2 ? "bg-primary" : "bg-secondary"
             }`}
-            style={{ width: "30px", height: "30px" }}
+            style={{ width: "30px", height: "30px", fontSize: "22px" }}
           >
             2
           </div>
